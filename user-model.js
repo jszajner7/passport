@@ -1,4 +1,6 @@
 var mongoose = require('mongoose');
+var bcrypt = require('bcryptjs');
+
 var UserSchema = new mongoose.Schema({
     username: {
         type: String,
@@ -11,6 +13,30 @@ var UserSchema = new mongoose.Schema({
     }
 });
 
+UserSchema.methods.validatePassword = function(password, callback) {
+    bcrypt.compare(password, this.password, function(err, isValid) {
+        if (err) {
+            callback(err);
+            return;
+        }
+        callback(null, isValid);
+    });
+};
+
 var User = mongoose.model('User', UserSchema);
+
+var bcrypt = require('bcriptjs');
+
+UserSchema.methods.validatePassword = function(password, callback) {
+    bcrypt.compare(password, this.password, function(err, isValid) {
+        if (err) {
+            callback(err);
+            return;
+        }
+        callback(null, isValid);
+    });
+};
+    
+
 
 module.exports = User;

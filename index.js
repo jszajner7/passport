@@ -1,3 +1,36 @@
+var passport = require('passport');
+var BasicStrategy = require('passport-http').BasicStrategy;
+
+var strategy = new BasicStrategy (function(username, password, callback) {
+    User.findOne({
+        username: username
+    }, function (err, user) {
+        if (err) {
+            callback(err)
+            return;
+        }
+        
+        if(!user) {
+            return callback(null, false, {
+                message: 'Incorrect username.'
+        });
+    }    
+    
+    user.validatePassword(password, function(err, isValid) {
+        if (err) {
+            return callback(err);
+        }
+        
+        if (!isValid) {
+            return callback(null, false, {
+                message: 'Incorrect password.'
+            });
+        }
+        return callback(null,user);
+    });
+    });
+});
+
 var express = require('express');
 var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
@@ -13,6 +46,14 @@ app.post('/users', jsonParser, function(req, res) {
             message: "No request body"
         });
     }
+    
+    app.use(passport.initialize());
+    
+    app.get('/hidden', passport.authenticate('basic', {session: false}),function(req,res) {
+        res.jason({
+            message: 'Luke...I am your father'
+        });
+    });
 
     if (!('username' in req.body)) {
         return res.status(422).json({
@@ -71,6 +112,44 @@ app.post('/users', jsonParser, function(req, res) {
         }
 
         return res.status(201).json({});
+    });
+});
+
+var bcrypt = require('bcryptjs');
+
+app.post('/users', jsonParser, function(req, res) {
+    // Body validation code
+    
+
+    bcrypt.genSalt(10, function(err, salt) {
+        if (err) {
+            return res.status(500).json({
+                message: 'Internal server error'
+            });
+        }
+
+        bcrypt.hash(password, salt, function(err, hash) {
+            if (err) {
+                return res.status(500).json({
+                    message: 'Internal server error'
+                });
+            }
+
+            var user = new User({
+                username: username,
+                password: hash
+            });
+
+            user.save(function(err) {
+                if (err) {
+                    return res.status(500).json({
+                        message: 'Internal server error'
+                    });
+                }
+
+                return res.status(201).json({});
+            });
+        });
     });
 });
 
